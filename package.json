@@ -1,0 +1,28 @@
+{
+  "name": "innovation-erp",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "postinstall": "npm run build --workspace=@ierp/shared",
+    "dev": "npm run build --workspace=@ierp/shared && concurrently -n api,web -c blue,green \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": "npm run build --workspace=@ierp/shared && npm run dev --workspace=@ierp/api",
+    "dev:web": "npm run build --workspace=@ierp/shared && npm run dev --workspace=@ierp/web",
+    "build": "npm run build --workspace=@ierp/shared && npm run build --workspace=@ierp/api && npm run build --workspace=@ierp/web",
+    "lint": "npm run lint --workspace=@ierp/web",
+    "typecheck": "npm run build --workspace=@ierp/shared && npm run typecheck --workspaces --if-present",
+    "db:generate": "npm run db:generate --workspace=@ierp/api",
+    "db:migrate": "npm run db:migrate --workspace=@ierp/api",
+    "db:migrate:dev": "npm run db:migrate:dev --workspace=@ierp/api",
+    "db:seed": "npm run db:seed --workspace=@ierp/api",
+    "db:studio": "npm run db:studio --workspace=@ierp/api",
+    "test:data-accuracy": "npm run test:data-accuracy --workspace=@ierp/api",
+    "test:search": "npm run test:search --workspace=@ierp/api",
+    "test:entity-workspace": "npm run test:entity-workspace --workspace=@ierp/web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "phone" TEXT;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "job_title" TEXT;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "avatar_path" TEXT;

@@ -8,6 +8,8 @@ interface TableToolbarProps {
   searchPlaceholder?: string;
   searchValue?: string;
   onSearchChange?: (value: string) => void;
+  /** Accessible name for the search field (defaults to placeholder). */
+  searchAriaLabel?: string;
   actions?: React.ReactNode;
   /**
    * Compact filter controls (selects, toggles) rendered inline with search.
@@ -19,12 +21,18 @@ interface TableToolbarProps {
   className?: string;
 }
 
+/**
+ * Shared list/filter toolbar used across ERP directories.
+ * Keep filter controls in `filters` (not a separate full-width row).
+ * Native date inputs must not use w-full here — that caused desktop stacking.
+ */
 export function TableToolbar({
   title,
   description,
   searchPlaceholder = "Search…",
   searchValue,
   onSearchChange,
+  searchAriaLabel,
   actions,
   filters,
   endAddon,
@@ -48,13 +56,15 @@ export function TableToolbar({
 
       <div
         className={cn(
-          "flex min-w-0 flex-wrap items-center gap-2",
-          /* Native selects inherit w-full from form-utils; keep toolbar filters compact. */
-          "[&_select]:w-auto [&_select]:max-w-[14rem] [&_select]:shrink-0"
+          "flex min-w-0 flex-wrap items-end gap-2",
+          /* Compact toolbar controls — never let native fields stretch full row width. */
+          "[&_select]:w-auto [&_select]:max-w-[14rem] [&_select]:shrink-0",
+          "[&_input]:w-auto [&_input]:max-w-full [&_input]:shrink-0",
+          "[&_input[type=date]]:w-[10.5rem] [&_input[type=date]]:min-w-[9.5rem]"
         )}
       >
         {onSearchChange !== undefined && (
-          <div className="relative min-w-[12rem] flex-1 basis-[14rem] sm:min-w-[16rem] sm:max-w-sm">
+          <div className="relative min-w-0 flex-[1_1_16rem] basis-[16rem] sm:max-w-[22rem] sm:flex-[1_1_18rem]">
             <Search
               className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]"
               aria-hidden
@@ -63,16 +73,42 @@ export function TableToolbar({
               value={searchValue ?? ""}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full ps-9"
+              aria-label={searchAriaLabel ?? searchPlaceholder}
+              className="w-full max-w-none ps-9"
             />
           </div>
         )}
         {filters}
         {actions}
         {endAddon ? (
-          <div className="ms-auto flex shrink-0 flex-wrap items-center gap-2">{endAddon}</div>
+          <div className="ms-auto flex shrink-0 flex-wrap items-end gap-2">{endAddon}</div>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+/** Compact labeled control for toolbar filters (Entity, From, Rows, …). */
+export function ToolbarField({
+  label,
+  htmlFor,
+  className,
+  children,
+}: {
+  label: string;
+  htmlFor?: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={cn("flex min-w-0 flex-col gap-1", className)}>
+      <label
+        htmlFor={htmlFor}
+        className="text-[10px] font-semibold uppercase tracking-wide text-[var(--muted)]"
+      >
+        {label}
+      </label>
+      {children}
     </div>
   );
 }

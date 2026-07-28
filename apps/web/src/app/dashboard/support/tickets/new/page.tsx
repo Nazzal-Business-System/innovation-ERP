@@ -31,7 +31,7 @@ export default function NewTicketPage() {
   const { data: categoriesData } = useSupportCategories({ activeOnly: true });
   const { data: customersData } = useSalesCustomers({ active: true });
   const { data: projectsData } = useProjects({});
-  const { data: usersData } = useSettingsUsers();
+  const { data: usersData } = useSettingsUsers({ page: 1, pageSize: 100 });
   const createTicketMutation = useCreateSupportTicket();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -29,6 +29,7 @@ import {
 import { apiDateSchema, toApiDateUtcNoon } from "../lib/api-date.js";
 import { authenticate, requireJwtConfigured, type AuthenticatedRequest } from "../middleware/auth.js";
 import { requirePermission } from "../middleware/require-permission.js";
+import { requireEmployeeSelfService } from "../middleware/require-employee-self-service.js";
 import { asyncHandler } from "../middleware/error-handler.js";
 import { uploadAvatarSchema } from "../lib/auth-profile-validation.js";
 
@@ -125,6 +126,7 @@ function formatTimeHHmm(date: Date): string {
 router.use(requireJwtConfigured);
 router.use(authenticate);
 router.use(requirePermission(HR_SELF_PERMISSIONS.READ));
+router.use(requireEmployeeSelfService());
 
 router.get(
   "/me",

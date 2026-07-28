@@ -10,6 +10,14 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: `${APP_NAME} | Nazzal Business System`,
   description: "Innovation ERP — integrated operations platform for growing businesses",
+  applicationName: APP_NAME,
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/apple-icon", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

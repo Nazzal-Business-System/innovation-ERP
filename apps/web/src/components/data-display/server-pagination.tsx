@@ -15,10 +15,10 @@ export function toServerPagination(
   onPageChange: (page: number) => void,
   disabled?: boolean
 ): DataTableServerPagination | undefined {
-  if (!pagination || pagination.totalPages <= 1) return undefined;
+  if (!pagination || pagination.total <= 0) return undefined;
   return {
     page: pagination.page,
-    totalPages: pagination.totalPages,
+    totalPages: Math.max(1, pagination.totalPages),
     totalItems: pagination.total,
     pageSize: pagination.limit,
     onPageChange,
@@ -36,12 +36,12 @@ export function ToolbarPagination({
   onPageChange: (page: number) => void;
   disabled?: boolean;
 }) {
-  if (!pagination || pagination.totalPages <= 1) return null;
+  if (!pagination || pagination.total <= 0) return null;
   return (
     <TablePagination
       className="ms-auto hidden sm:inline-flex"
       page={pagination.page}
-      totalPages={pagination.totalPages}
+      totalPages={Math.max(1, pagination.totalPages)}
       totalItems={pagination.total}
       pageSize={pagination.limit}
       onPageChange={onPageChange}

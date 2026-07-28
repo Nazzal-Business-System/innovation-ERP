@@ -93,7 +93,6 @@ export function LoginForm() {
 
   useEffect(() => {
     router.prefetch("/dashboard");
-    router.prefetch("/dashboard/my-workspace");
     try {
       const saved = localStorage.getItem(REMEMBER_EMAIL_KEY);
       if (saved) {

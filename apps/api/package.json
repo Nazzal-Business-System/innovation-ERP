@@ -9,6 +9,8 @@
     "typecheck": "tsc --noEmit",
     "test:data-accuracy": "node --experimental-strip-types --test src/lib/__tests__/data-accuracy.test.ts src/lib/__tests__/inventory-product-update.test.ts",
     "test:search": "node --experimental-strip-types --test ../../packages/shared/src/utils/__tests__/search-ranking.test.ts src/lib/__tests__/navigation-search.test.ts",
+    "seed:knowledge": "tsx scripts/backfill-knowledge.ts",
+    "seed:verify": "tsx scripts/verify-seed-coverage.ts",
     "diag:metrics": "tsx scripts/metric-diagnostics.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",

@@ -27,6 +27,20 @@ export const auditLogsListSchema = paginationSchema.extend({
   search: z.string().trim().optional(),
   action: z.string().trim().optional(),
   entity: z.string().trim().optional(),
+  userId: z.string().uuid().optional(),
+  from: z.string().trim().optional(),
+  to: z.string().trim().optional(),
+  pageSize: z.coerce.number().int().min(1).max(100).optional(),
+});
+
+export const usersListSchema = paginationSchema.extend({
+  search: z.string().trim().optional(),
+  role: z.string().trim().optional(),
+  status: z.enum(["active", "inactive", "all"]).optional().default("all"),
+  presence: z.enum(["online", "away", "offline", "all"]).optional().default("all"),
+  sortBy: z.enum(["name", "email", "createdAt", "lastLoginAt"]).optional().default("name"),
+  sortOrder: z.enum(["asc", "desc"]).optional().default("asc"),
+  pageSize: z.coerce.number().int().min(1).max(100).optional(),
 });
 
 export const updateRolePermissionsSchema = z.object({

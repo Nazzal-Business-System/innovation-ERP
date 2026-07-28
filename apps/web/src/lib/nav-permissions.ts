@@ -5,7 +5,6 @@ import {
   EXECUTIVE_PERMISSIONS,
   FINANCE_PERMISSIONS,
   HR_PERMISSIONS,
-  HR_SELF_PERMISSIONS,
   INVENTORY_PERMISSIONS,
   KNOWLEDGE_PERMISSIONS,
   NOTIFICATIONS_PERMISSIONS,
@@ -17,25 +16,25 @@ import {
   SETTINGS_PERMISSIONS,
   SUPPORT_PERMISSIONS,
   hasPermission,
+  isEmployeeSelfServiceUser,
 } from "@ierp/shared";
 
 const AUDIT_LOG_READ = "audit_log.read";
 
-/** Whether a sidebar nav item should be visible for the current permission set. */
+/**
+ * Sidebar / search / pin visibility.
+ * My Workspace (`my-*`) is employee self-service only — see `isEmployeeSelfServiceUser`.
+ */
 export function canAccessNavItem(itemId: string, permissions: string[]): boolean {
   if (itemId.startsWith("my-")) {
-    return hasPermission(permissions, HR_SELF_PERMISSIONS.READ);
+    return isEmployeeSelfServiceUser(permissions);
   }
   if (itemId === "dashboard") {
     return hasPermission(permissions, EXECUTIVE_PERMISSIONS.READ);
   }
   if (itemId === "notifications") {
     // Employees use My Workspace → Notifications instead of the executive inbox.
-    if (
-      hasPermission(permissions, HR_SELF_PERMISSIONS.READ) &&
-      !hasPermission(permissions, EXECUTIVE_PERMISSIONS.READ) &&
-      !hasPermission(permissions, HR_PERMISSIONS.READ)
-    ) {
+    if (isEmployeeSelfServiceUser(permissions)) {
       return false;
     }
     return hasPermission(permissions, NOTIFICATIONS_PERMISSIONS.READ);

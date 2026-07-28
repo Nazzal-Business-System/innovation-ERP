@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { HR_SELF_PERMISSIONS } from "@ierp/shared";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/feedback/error-state";
 import { PageSkeleton } from "@/components/feedback/page-skeleton";
@@ -31,7 +30,7 @@ function isSelfLinkActive(href: string, match: "exact" | "prefix", pathname: str
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-/** Blocks users without hr_self.read from the employee workspace. */
+/** Blocks non–self-service users from the employee workspace (managers/CEO → access denied). */
 export function MyWorkspaceGate({ children }: { children: React.ReactNode }) {
   const initialized = useAuthStore((s) => s.initialized);
   const permissions = useAuthStore((s) => s.permissions);
@@ -39,7 +38,7 @@ export function MyWorkspaceGate({ children }: { children: React.ReactNode }) {
 
   if (!initialized) return <PageSkeleton />;
 
-  if (!permissions.includes(HR_SELF_PERMISSIONS.READ)) {
+  if (!isEmployeeSelfServiceUser(permissions)) {
     return (
       <div className="space-y-4">
         <ErrorState

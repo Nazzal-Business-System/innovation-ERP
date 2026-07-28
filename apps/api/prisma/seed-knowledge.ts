@@ -108,6 +108,217 @@ Applies to all authorized ERP users in the relevant department.
 - v1.0 — Initial publication for Knowledge Base V1 demo seed.`;
 }
 
+/**
+ * Idempotent knowledge backfill for an existing organization.
+ * Does NOT delete existing articles. Upserts by articleNumber / category code.
+ * Safe to run twice. Skips optional ticket/doc links when targets are missing.
+ */
+export async function backfillKnowledgeIdempotent(
+  prisma: PrismaClient,
+  organizationId: string,
+  options: { authorUserIds?: string[] } = {}
+) {
+  let authors = options.authorUserIds ?? [];
+  if (authors.length === 0) {
+    const users = await prisma.user.findMany({
+      where: { organizationId, isActive: true },
+      select: { id: true },
+      take: 5,
+      orderBy: { createdAt: "asc" },
+    });
+    authors = users.map((u) => u.id);
+  }
+  if (authors.length === 0) {
+    throw new Error(
+      `No active users in organization ${organizationId} to author knowledge articles`
+    );
+  }
+
+  for (const cat of CATEGORIES) {
+    await prisma.knowledgeCategory.upsert({
+      where: { organizationId_code: { organizationId, code: cat.code } },
+      update: { name: cat.name, description: cat.description, isActive: true },
+      create: {
+        ...(organizationId === ORG_ID ? { id: cat.id } : {}),
+        organizationId,
+        code: cat.code,
+        name: cat.name,
+        description: cat.description,
+        isActive: true,
+      },
+    });
+  }
+
+  const categories = await prisma.knowledgeCategory.findMany({
+    where: { organizationId },
+  });
+  const categoryByCode = new Map(categories.map((c) => [c.code, c]));
+
+  const baseDate = new Date("2026-06-01T09:00:00Z");
+  let created = 0;
+  let updated = 0;
+  let tagsCreated = 0;
+
+  for (let i = 0; i < ARTICLE_DEFS.length; i++) {
+    const def = ARTICLE_DEFS[i]!;
+    const status = STATUSES[i]!;
+    const visibility = VISIBILITIES[i]!;
+    const catCode = CATEGORIES[def.category]!.code;
+    const category = categoryByCode.get(catCode);
+    if (!category) continue;
+
+    const articleNumber = `KB-2026-${String(i + 1).padStart(4, "0")}`;
+    const publishedAt =
+      status === "PUBLISHED" ? new Date(baseDate.getTime() + i * 86400000) : null;
+    const authorId = authors[i % authors.length]!;
+
+    const existing = await prisma.knowledgeArticle.findFirst({
+      where: { organizationId, articleNumber },
+      select: { id: true },
+    });
+
+    const articleId =
+      existing?.id ?? (organizationId === ORG_ID ? padId(2000 + i) : undefined);
+
+    if (existing) {
+      // Preserve user-modified articles — only ensure tags below.
+      updated += 1;
+    } else {
+      await prisma.knowledgeArticle.create({
+        data: {
+          ...(articleId ? { id: articleId } : {}),
+          organizationId,
+          categoryId: category.id,
+          articleNumber,
+          title: def.title,
+          summary: def.summary,
+          content: articleContent(def.title),
+          status,
+          visibility,
+          authorId,
+          publishedAt,
+          updatedAt: new Date(baseDate.getTime() + (i + 5) * 86400000),
+          createdAt: new Date(baseDate.getTime() + i * 43200000),
+        },
+      });
+      created += 1;
+    }
+
+    const article = await prisma.knowledgeArticle.findFirstOrThrow({
+      where: { organizationId, articleNumber },
+      select: { id: true },
+    });
+
+    for (const tag of def.tags) {
+      const tagExists = await prisma.knowledgeArticleTag.findFirst({
+        where: { organizationId, articleId: article.id, tag },
+        select: { id: true },
+      });
+      if (!tagExists) {
+        await prisma.knowledgeArticleTag.create({
+          data: { organizationId, articleId: article.id, tag },
+        });
+        tagsCreated += 1;
+      }
+    }
+  }
+
+  // Optional links — only for demo org when related seed rows exist
+  let ticketLinks = 0;
+  let documentLinks = 0;
+  if (organizationId === ORG_ID) {
+    const ticketLinkDefs = [
+      { articleNumber: "KB-2026-0001", ticketId: SUPPORT_TICKET_1 },
+      { articleNumber: "KB-2026-0006", ticketId: SUPPORT_TICKET_1 },
+      { articleNumber: "KB-2026-0006", ticketId: SUPPORT_TICKET_2 },
+      { articleNumber: "KB-2026-0013", ticketId: SUPPORT_TICKET_1 },
+      { articleNumber: "KB-2026-0020", ticketId: SUPPORT_TICKET_2 },
+      { articleNumber: "KB-2026-0022", ticketId: SUPPORT_TICKET_1 },
+      { articleNumber: "KB-2026-0030", ticketId: SUPPORT_TICKET_2 },
+      { articleNumber: "KB-2026-0035", ticketId: SUPPORT_TICKET_1 },
+    ];
+    for (const link of ticketLinkDefs) {
+      const article = await prisma.knowledgeArticle.findFirst({
+        where: { organizationId, articleNumber: link.articleNumber },
+      });
+      const ticket = await prisma.supportTicket.findFirst({
+        where: { id: link.ticketId, organizationId },
+      });
+      if (!article || !ticket) continue;
+      const exists = await prisma.knowledgeArticleSupportTicket.findFirst({
+        where: {
+          organizationId,
+          articleId: article.id,
+          supportTicketId: ticket.id,
+        },
+      });
+      if (!exists) {
+        await prisma.knowledgeArticleSupportTicket.create({
+          data: {
+            organizationId,
+            articleId: article.id,
+            supportTicketId: ticket.id,
+          },
+        });
+        ticketLinks += 1;
+      }
+    }
+
+    const docLinkDefs = [
+      { articleNumber: "KB-2026-0001", documentFileId: DOC_FILE_1 },
+      { articleNumber: "KB-2026-0007", documentFileId: DOC_FILE_1 },
+      { articleNumber: "KB-2026-0007", documentFileId: DOC_FILE_2 },
+      { articleNumber: "KB-2026-0023", documentFileId: DOC_FILE_1 },
+      { articleNumber: "KB-2026-0008", documentFileId: DOC_FILE_2 },
+      { articleNumber: "KB-2026-0018", documentFileId: DOC_FILE_1 },
+    ];
+    for (const link of docLinkDefs) {
+      const article = await prisma.knowledgeArticle.findFirst({
+        where: { organizationId, articleNumber: link.articleNumber },
+      });
+      const file = await prisma.documentFile.findFirst({
+        where: { id: link.documentFileId, organizationId },
+      });
+      if (!article || !file) continue;
+      const exists = await prisma.knowledgeArticleDocument.findFirst({
+        where: {
+          organizationId,
+          articleId: article.id,
+          documentFileId: file.id,
+        },
+      });
+      if (!exists) {
+        await prisma.knowledgeArticleDocument.create({
+          data: {
+            organizationId,
+            articleId: article.id,
+            documentFileId: file.id,
+          },
+        });
+        documentLinks += 1;
+      }
+    }
+  }
+
+  const totals = {
+    categories: await prisma.knowledgeCategory.count({ where: { organizationId } }),
+    articles: await prisma.knowledgeArticle.count({ where: { organizationId } }),
+    published: await prisma.knowledgeArticle.count({
+      where: { organizationId, status: "PUBLISHED" },
+    }),
+    tags: await prisma.knowledgeArticleTag.count({ where: { organizationId } }),
+  };
+
+  return {
+    created,
+    updated,
+    tagsCreated,
+    ticketLinks,
+    documentLinks,
+    totals,
+  };
+}
+
 export async function seedKnowledge(prisma: PrismaClient) {
   await prisma.knowledgeArticleSupportTicket.deleteMany({ where: { organizationId: ORG_ID } });
   await prisma.knowledgeArticleDocument.deleteMany({ where: { organizationId: ORG_ID } });
@@ -115,98 +326,14 @@ export async function seedKnowledge(prisma: PrismaClient) {
   await prisma.knowledgeArticle.deleteMany({ where: { organizationId: ORG_ID } });
   await prisma.knowledgeCategory.deleteMany({ where: { organizationId: ORG_ID } });
 
-  for (const cat of CATEGORIES) {
-    await prisma.knowledgeCategory.upsert({
-      where: { organizationId_code: { organizationId: ORG_ID, code: cat.code } },
-      update: { name: cat.name, description: cat.description, isActive: true },
-      create: { ...cat, organizationId: ORG_ID, isActive: true },
-    });
-  }
-
-  const baseDate = new Date("2026-06-01T09:00:00Z");
-
-  for (let i = 0; i < ARTICLE_DEFS.length; i++) {
-    const def = ARTICLE_DEFS[i]!;
-    const status = STATUSES[i]!;
-    const visibility = VISIBILITIES[i]!;
-    const category = CATEGORIES[def.category]!;
-    const publishedAt =
-      status === "PUBLISHED" ? new Date(baseDate.getTime() + i * 86400000) : null;
-    const updatedAt = new Date(baseDate.getTime() + (i + 5) * 86400000);
-
-    await prisma.knowledgeArticle.create({
-      data: {
-        id: padId(2000 + i),
-        organizationId: ORG_ID,
-        categoryId: category.id,
-        articleNumber: `KB-2026-${String(i + 1).padStart(4, "0")}`,
-        title: def.title,
-        summary: def.summary,
-        content: articleContent(def.title),
-        status,
-        visibility,
-        authorId: i % 3 === 0 ? HR_USER_ID : CEO_USER_ID,
-        publishedAt,
-        updatedAt,
-        createdAt: new Date(baseDate.getTime() + i * 43200000),
-      },
-    });
-
-    for (const tag of def.tags) {
-      await prisma.knowledgeArticleTag.create({
-        data: {
-          organizationId: ORG_ID,
-          articleId: padId(2000 + i),
-          tag,
-        },
-      });
-    }
-  }
-
-  const ticketLinks = [
-    { articleId: padId(2000), ticketId: SUPPORT_TICKET_1 },
-    { articleId: padId(2005), ticketId: SUPPORT_TICKET_1 },
-    { articleId: padId(2005), ticketId: SUPPORT_TICKET_2 },
-    { articleId: padId(2012), ticketId: SUPPORT_TICKET_1 },
-    { articleId: padId(2019), ticketId: SUPPORT_TICKET_2 },
-    { articleId: padId(2021), ticketId: SUPPORT_TICKET_1 },
-    { articleId: padId(2029), ticketId: SUPPORT_TICKET_2 },
-    { articleId: padId(2034), ticketId: SUPPORT_TICKET_1 },
-  ];
-
-  for (const link of ticketLinks) {
-    await prisma.knowledgeArticleSupportTicket.create({
-      data: {
-        organizationId: ORG_ID,
-        articleId: link.articleId,
-        supportTicketId: link.ticketId,
-      },
-    });
-  }
-
-  const docLinks = [
-    { articleId: padId(2000), documentFileId: DOC_FILE_1 },
-    { articleId: padId(2006), documentFileId: DOC_FILE_1 },
-    { articleId: padId(2006), documentFileId: DOC_FILE_2 },
-    { articleId: padId(2022), documentFileId: DOC_FILE_1 },
-    { articleId: padId(2007), documentFileId: DOC_FILE_2 },
-    { articleId: padId(2017), documentFileId: DOC_FILE_1 },
-  ];
-
-  for (const link of docLinks) {
-    await prisma.knowledgeArticleDocument.create({
-      data: {
-        organizationId: ORG_ID,
-        articleId: link.articleId,
-        documentFileId: link.documentFileId,
-      },
-    });
-  }
+  const result = await backfillKnowledgeIdempotent(prisma, ORG_ID, {
+    authorUserIds: [CEO_USER_ID, HR_USER_ID],
+  });
 
   return {
-    categories: CATEGORIES.length,
-    articles: ARTICLE_DEFS.length,
-    ticketLinks: ticketLinks.length,
-    documentLinks: docLinks.length,
+    categories: result.totals.categories,
+    articles: result.totals.articles,
+    ticketLinks: result.ticketLinks,
+    documentLinks: result.documentLinks,
   };
 }

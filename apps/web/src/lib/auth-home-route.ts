@@ -1,21 +1,16 @@
-import { EXECUTIVE_PERMISSIONS, HR_PERMISSIONS, HR_SELF_PERMISSIONS, hasPermission } from "@ierp/shared";
+import { isEmployeeSelfServiceUser } from "@ierp/shared";
+
+export { isEmployeeSelfServiceUser };
 
 /** Home route after login / session restore. */
 export function resolveHomeRoute(permissions: string[]): string {
   return isEmployeeSelfServiceUser(permissions) ? "/dashboard/my-workspace" : "/dashboard";
 }
 
-export function isEmployeeSelfServiceUser(permissions: string[]): boolean {
-  return (
-    hasPermission(permissions, HR_SELF_PERMISSIONS.READ) &&
-    !hasPermission(permissions, HR_PERMISSIONS.READ) &&
-    !hasPermission(permissions, EXECUTIVE_PERMISSIONS.READ)
-  );
-}
-
 /**
  * Honor an intended post-login path only when the user is allowed to open it.
  * Regular employees never land on inaccessible management pages.
+ * Managers/admins are redirected away from My Workspace (employee-only).
  */
 export function resolveAuthorizedRedirect(
   permissions: string[],
@@ -34,6 +29,11 @@ export function resolveAuthorizedRedirect(
       intended.startsWith("/dashboard/settings/language") ||
       intended.startsWith("/dashboard/settings/notifications");
     return allowed ? intended : home;
+  }
+
+  // Management users: My Workspace is employee-only — bounce to home.
+  if (intended.startsWith("/dashboard/my-workspace")) {
+    return home;
   }
 
   if (intended.startsWith("/dashboard") || intended.startsWith("/login")) {

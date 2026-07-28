@@ -72,7 +72,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const { data: project, loading, error, refetch } = useProject(id);
   const updateProjectMutation = useUpdateProject();
   const { data: customersData } = useSalesCustomers({ active: true, page: 1 });
-  const { data: usersData } = useSettingsUsers({ page: 1 });
+  const { data: usersData } = useSettingsUsers({ page: 1, pageSize: 100 });
   const [newStatus, setNewStatus] = useState("");
   const [updating, setUpdating] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);

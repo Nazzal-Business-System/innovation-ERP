@@ -2,6 +2,13 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import type { SettingsAuditLog, SettingsUser } from "@ierp/shared";
+import {
+  extractAuditBusinessCode,
+  formatAuditActionLabel,
+  formatAuditDetailSummary,
+  formatAuditEntityLabel,
+  isUuidLike,
+} from "@ierp/shared";
 import { PresenceBadge } from "@/components/presence/presence-badge";
 import { PersonAvatar, PersonAvatarLabel } from "@/components/avatar/person-avatar";
 import { StatusBadge } from "@/components/data-display/status-badge";
@@ -93,14 +100,15 @@ export function useUserColumns(): ColumnDef<SettingsUser>[] {
 }
 
 export function useAuditLogColumns(): ColumnDef<SettingsAuditLog>[] {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const auditLocale = locale === "ar" ? "ar" : "en";
   return [
     {
       id: "user",
       header: t("table.user"),
       cell: ({ row }) => (
         <div>
-          <p className="text-sm font-medium">{row.original.user?.name ?? "System"}</p>
+          <p className="text-sm font-medium">{row.original.user?.name ?? t("common.system", "System")}</p>
           {row.original.user?.email && (
             <p className="text-xs text-[var(--muted)]">{row.original.user.email}</p>
           )}
@@ -110,19 +118,53 @@ export function useAuditLogColumns(): ColumnDef<SettingsAuditLog>[] {
     {
       accessorKey: "action",
       header: t("table.action"),
-      cell: ({ row }) => <span className="font-mono text-xs">{row.original.action}</span>,
+      cell: ({ row }) => {
+        const label = formatAuditActionLabel(row.original.action, auditLocale);
+        const summary = formatAuditDetailSummary({
+          action: row.original.action,
+          entity: row.original.entity,
+          entityId: row.original.entityId,
+          details: row.original.details,
+          userName: row.original.user?.name,
+          locale: auditLocale,
+        });
+        const code = extractAuditBusinessCode(row.original.details);
+        return (
+          <div title={`${summary}\n${row.original.action}`}>
+            <p className="text-sm font-medium text-[var(--foreground)]">{label}</p>
+            {code ? (
+              <p className="text-xs tabular-nums text-[var(--muted)]">{code}</p>
+            ) : null}
+            <p className="mt-0.5 hidden text-[10px] text-[var(--muted)] sm:block" aria-hidden>
+              {row.original.action}
+            </p>
+          </div>
+        );
+      },
     },
     {
       accessorKey: "entity",
       header: t("table.entity"),
-      cell: ({ row }) => (
-        <div>
-          <p className="text-sm">{row.original.entity}</p>
-          {row.original.entityId && (
-            <p className="font-mono text-xs text-[var(--muted)]">{row.original.entityId.slice(0, 8)}…</p>
-          )}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const entityLabel = formatAuditEntityLabel(row.original.entity, auditLocale);
+        const code = extractAuditBusinessCode(row.original.details);
+        const showUuid =
+          row.original.entityId && isUuidLike(row.original.entityId) && !code;
+        return (
+          <div title={row.original.entityId ?? undefined}>
+            <p className="text-sm">{entityLabel}</p>
+            {code ? (
+              <p className="text-xs font-medium tabular-nums text-[var(--muted)]">{code}</p>
+            ) : showUuid ? (
+              <p className="font-mono text-[10px] text-[var(--muted)]">
+                {t("settings.audit.technicalId", "Technical ID")}
+              </p>
+            ) : row.original.entityId && !isUuidLike(row.original.entityId) ? (
+              <p className="text-xs tabular-nums text-[var(--muted)]">{row.original.entityId}</p>
+            ) : null}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "createdAt",
@@ -132,11 +174,6 @@ export function useAuditLogColumns(): ColumnDef<SettingsAuditLog>[] {
           {new Date(row.original.createdAt).toLocaleString()}
         </span>
       ),
-    },
-    {
-      id: "ip",
-      header: t("table.ip"),
-      cell: () => <span className="text-xs text-[var(--muted)]">—</span>,
     },
   ];
 }

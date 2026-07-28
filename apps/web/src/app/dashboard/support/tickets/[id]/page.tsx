@@ -99,7 +99,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const updateTicketMutation = useUpdateSupportTicket();
   const assignMutation = useAssignTicket();
   const addCommentMutation = useAddTicketComment();
-  const { data: usersData } = useSettingsUsers();
+  const { data: usersData } = useSettingsUsers({ page: 1, pageSize: 100 });
   const { data: categoriesData } = useSupportCategories({});
   const { data: customersData } = useSalesCustomers({ active: true });
   const { data: projectsData } = useProjects({});

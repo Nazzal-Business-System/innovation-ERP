@@ -31,6 +31,8 @@ type SidebarPinsStore = UserUiPreferences & {
   movePin: (itemId: string, direction: "up" | "down") => void;
   reorderPins: (orderedIds: string[]) => void;
   clearPins: () => void;
+  /** Drop pins the current user can no longer access (e.g. My Workspace for managers). */
+  pruneInaccessiblePins: (permissions: string[]) => void;
   isPinned: (itemId: string) => boolean;
   /** Collapsible sidebar module groups (IDE explorer style). */
   toggleGroup: (groupId: string) => void;
@@ -252,6 +254,19 @@ export const useSidebarPinsStore = create<SidebarPinsStore>()(
       clearPins: () => {
         set({ sidebarPins: [] });
         schedulePersist(get, set, { sidebarPins: [] });
+      },
+
+      pruneInaccessiblePins: (permissions) => {
+        const current = get().sidebarPins;
+        const next = reindex(
+          current.filter((pin) => isKnownNavItemId(pin.id) && canAccessNavItem(pin.id, permissions))
+        );
+        if (next.length === current.length) {
+          const same = next.every((p, i) => p.id === current[i]?.id);
+          if (same) return;
+        }
+        set({ sidebarPins: next });
+        schedulePersist(get, set, { sidebarPins: next }, 400);
       },
 
       isPinned: (itemId) => get().sidebarPins.some((p) => p.id === itemId),

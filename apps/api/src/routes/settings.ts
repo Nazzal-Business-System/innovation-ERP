@@ -13,10 +13,10 @@ import {
 import { revokeAuthzForOrganization } from "../lib/authz-cache.js";
 import {
   auditLogsListSchema,
-  paginationSchema,
   updateOrganizationSchema,
   updatePreferencesSchema,
   updateRolePermissionsSchema,
+  usersListSchema,
 } from "../lib/settings-validation.js";
 import {
   serializeAuditLog,
@@ -28,6 +28,8 @@ import {
   serializeSettingsUser,
 } from "../lib/serialize-settings.js";
 import { authenticate, requireJwtConfigured, type AuthenticatedRequest } from "../middleware/auth.js";
+import { PRESENCE_AWAY_MS, PRESENCE_ONLINE_MS } from "@ierp/shared";
+import type { Prisma } from "@prisma/client";
 import { requirePermission } from "../middleware/require-permission.js";
 import { asyncHandler } from "../middleware/error-handler.js";
 
@@ -122,21 +124,88 @@ router.get(
   "/users",
   requirePermission(USERS_PERMISSIONS.READ),
   asyncHandler(async (req: AuthenticatedRequest, res) => {
-    const { page, limit } = paginationSchema.parse(req.query);
+    const parsed = usersListSchema.parse(req.query);
+    const page = parsed.page;
+    const limit = parsed.pageSize ?? parsed.limit;
+    const {
+      search,
+      role,
+      status = "all",
+      presence = "all",
+      sortBy = "name",
+      sortOrder = "asc",
+    } = parsed;
     const orgId = req.user!.organizationId;
+    const now = new Date();
+    const onlineSince = new Date(now.getTime() - PRESENCE_ONLINE_MS);
+    const awaySince = new Date(now.getTime() - PRESENCE_AWAY_MS);
+
+    const and: Prisma.UserWhereInput[] = [{ organizationId: orgId }];
+
+    if (status === "active") and.push({ isActive: true });
+    if (status === "inactive") and.push({ isActive: false });
+
+    if (role) {
+      and.push({
+        userRoles: {
+          some: {
+            role: {
+              OR: [
+                { code: { equals: role, mode: "insensitive" } },
+                { id: role },
+                { name: { equals: role, mode: "insensitive" } },
+              ],
+            },
+          },
+        },
+      });
+    }
+
+    if (search) {
+      and.push({
+        OR: [
+          { name: { contains: search, mode: "insensitive" } },
+          { email: { contains: search, mode: "insensitive" } },
+        ],
+      });
+    }
+
+    if (presence === "online") {
+      and.push({ lastActiveAt: { gte: onlineSince } });
+    } else if (presence === "away") {
+      and.push({ lastSeenAt: { gte: awaySince } });
+      and.push({
+        OR: [{ lastActiveAt: null }, { lastActiveAt: { lt: onlineSince } }],
+      });
+    } else if (presence === "offline") {
+      and.push({
+        OR: [{ lastSeenAt: null }, { lastSeenAt: { lt: awaySince } }],
+      });
+    }
+
+    const where: Prisma.UserWhereInput = { AND: and };
+
+    const orderBy: Prisma.UserOrderByWithRelationInput =
+      sortBy === "email"
+        ? { email: sortOrder }
+        : sortBy === "createdAt"
+          ? { createdAt: sortOrder }
+          : sortBy === "lastLoginAt"
+            ? { lastLoginAt: sortOrder }
+            : { name: sortOrder };
 
     const [users, total] = await Promise.all([
       prisma.user.findMany({
-        where: { organizationId: orgId },
+        where,
         include: {
           organization: true,
           userRoles: { include: { role: true } },
         },
-        orderBy: { name: "asc" },
+        orderBy,
         skip: (page - 1) * limit,
         take: limit,
       }),
-      prisma.user.count({ where: { organizationId: orgId } }),
+      prisma.user.count({ where }),
     ]);
 
     res.json({
@@ -144,6 +213,7 @@ router.get(
       pagination: {
         page,
         limit,
+        pageSize: limit,
         total,
         totalPages: Math.ceil(total / limit) || 1,
       },
@@ -322,24 +392,40 @@ router.get(
   "/audit-logs",
   requirePermission(AUDIT_PERMISSIONS.READ),
   asyncHandler(async (req: AuthenticatedRequest, res) => {
-    const { page, limit, search, action, entity } = auditLogsListSchema.parse(req.query);
+    const parsed = auditLogsListSchema.parse(req.query);
+    const page = parsed.page;
+    const limit = parsed.pageSize ?? parsed.limit;
+    const { search, action, entity, userId, from, to } = parsed;
     const orgId = req.user!.organizationId;
 
-    const where = {
-      organizationId: orgId,
-      ...(action ? { action: { contains: action, mode: "insensitive" as const } } : {}),
-      ...(entity ? { entity: { contains: entity, mode: "insensitive" as const } } : {}),
-      ...(search
-        ? {
-            OR: [
-              { action: { contains: search, mode: "insensitive" as const } },
-              { entity: { contains: search, mode: "insensitive" as const } },
-              { user: { name: { contains: search, mode: "insensitive" as const } } },
-              { user: { email: { contains: search, mode: "insensitive" as const } } },
-            ],
-          }
-        : {}),
-    };
+    const and: Prisma.AuditLogWhereInput[] = [{ organizationId: orgId }];
+
+    if (action) and.push({ action: { contains: action, mode: "insensitive" } });
+    if (entity) and.push({ entity: { contains: entity, mode: "insensitive" } });
+    if (userId) and.push({ userId });
+
+    if (from) {
+      const fromDate = new Date(from.length === 10 ? `${from}T00:00:00.000Z` : from);
+      if (!Number.isNaN(fromDate.getTime())) and.push({ createdAt: { gte: fromDate } });
+    }
+    if (to) {
+      const toDate = new Date(to.length === 10 ? `${to}T23:59:59.999Z` : to);
+      if (!Number.isNaN(toDate.getTime())) and.push({ createdAt: { lte: toDate } });
+    }
+
+    if (search) {
+      and.push({
+        OR: [
+          { action: { contains: search, mode: "insensitive" } },
+          { entity: { contains: search, mode: "insensitive" } },
+          { entityId: { contains: search, mode: "insensitive" } },
+          { user: { name: { contains: search, mode: "insensitive" } } },
+          { user: { email: { contains: search, mode: "insensitive" } } },
+        ],
+      });
+    }
+
+    const where: Prisma.AuditLogWhereInput = { AND: and };
 
     const [logs, total] = await Promise.all([
       prisma.auditLog.findMany({
@@ -357,6 +443,7 @@ router.get(
       pagination: {
         page,
         limit,
+        pageSize: limit,
         total,
         totalPages: Math.ceil(total / limit) || 1,
       },

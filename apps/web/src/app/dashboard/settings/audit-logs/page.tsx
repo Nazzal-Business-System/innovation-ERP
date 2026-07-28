@@ -22,8 +22,35 @@ import { useI18n } from "@/lib/i18n";
 import { AUDIT_PERMISSIONS } from "@ierp/shared";
 import { cn } from "@/lib/utils";
 
+const ENTITY_FILTERS = [
+  "",
+  "User",
+  "PurchaseOrder",
+  "SalesOrder",
+  "JournalEntry",
+  "LeaveRequest",
+  "Report",
+  "Organization",
+  "Role",
+  "Customer",
+  "Vendor",
+  "Product",
+  "Employee",
+  "KnowledgeArticle",
+];
 
-const ENTITY_FILTERS = ["", "User", "PurchaseOrder", "SalesOrder", "JournalEntry", "LeaveRequest", "Report", "Organization"];
+const ACTION_FILTERS = [
+  "",
+  "auth.login",
+  "auth.logout",
+  "procurement.purchase_order.approved",
+  "sales.order.confirmed",
+  "accounting.journal_entry.posted",
+  "hr.leave.approved",
+  "reports.generated",
+];
+
+const PAGE_SIZES = [10, 20, 50, 100] as const;
 
 export default function AuditLogsPage() {
   const auditLogColumns = useAuditLogColumns();
@@ -31,17 +58,32 @@ export default function AuditLogsPage() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [entity, setEntity] = useState("");
+  const [action, setAction] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [pageSize, setPageSize] = useState(20);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(timer);
   }, [search]);
 
-  const { page, onPageChange } = useServerPagination([debouncedSearch, entity]);
+  const { page, onPageChange } = useServerPagination([
+    debouncedSearch,
+    entity,
+    action,
+    from,
+    to,
+    pageSize,
+  ]);
   const { data, loading, error, refetch } = useSettingsAuditLogs({
     search: debouncedSearch || undefined,
     entity: entity || undefined,
+    action: action || undefined,
+    from: from || undefined,
+    to: to || undefined,
     page,
+    pageSize,
   });
 
   if (loading && !data) {
@@ -87,18 +129,58 @@ export default function AuditLogsPage() {
                   />
                 }
                 actions={
-                  <select
-                    aria-label={t("settings.audit.filterEntity")}
-                    value={entity}
-                    onChange={(e) => setEntity(e.target.value)}
-                    className={cn(selectClassName, "min-w-[10rem]")}
-                  >
-                    {ENTITY_FILTERS.map((value) => (
-                      <option key={value || "all"} value={value}>
-                        {value || t("settings.audit.allEntities")}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <select
+                      aria-label={t("settings.audit.filterEntity")}
+                      value={entity}
+                      onChange={(e) => setEntity(e.target.value)}
+                      className={cn(selectClassName, "min-w-[10rem]")}
+                    >
+                      {ENTITY_FILTERS.map((value) => (
+                        <option key={value || "all"} value={value}>
+                          {value || t("settings.audit.allEntities")}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      aria-label={t("settings.audit.filterAction", "Action")}
+                      value={action}
+                      onChange={(e) => setAction(e.target.value)}
+                      className={cn(selectClassName, "min-w-[12rem]")}
+                    >
+                      {ACTION_FILTERS.map((value) => (
+                        <option key={value || "all-actions"} value={value}>
+                          {value || t("settings.audit.allActions", "All actions")}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="date"
+                      aria-label={t("settings.audit.from", "From")}
+                      value={from}
+                      onChange={(e) => setFrom(e.target.value)}
+                      className={cn(selectClassName, "min-w-[9rem]")}
+                    />
+                    <input
+                      type="date"
+                      aria-label={t("settings.audit.to", "To")}
+                      value={to}
+                      onChange={(e) => setTo(e.target.value)}
+                      className={cn(selectClassName, "min-w-[9rem]")}
+                    />
+                    <select
+                      aria-label={t("pagination.pageSize", "Rows per page")}
+                      value={pageSize}
+                      onChange={(e) => setPageSize(Number(e.target.value))}
+                      className={cn(selectClassName, "min-w-[5rem]")}
+                    >
+                      {PAGE_SIZES.map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 }
               />
               <DataTable

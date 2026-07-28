@@ -20,7 +20,9 @@
     "db:studio": "npm run db:studio --workspace=@ierp/api",
     "test:data-accuracy": "npm run test:data-accuracy --workspace=@ierp/api",
     "test:search": "npm run test:search --workspace=@ierp/api",
-    "test:entity-workspace": "npm run test:entity-workspace --workspace=@ierp/web"
+    "test:entity-workspace": "npm run test:entity-workspace --workspace=@ierp/web",
+    "seed:knowledge": "npm run seed:knowledge --workspace=@ierp/api",
+    "seed:verify": "npm run seed:verify --workspace=@ierp/api"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

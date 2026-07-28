@@ -7,7 +7,20 @@ export function isNonEmptyString(value: unknown): value is string {
 }
 
 export { hasPermission } from "./permissions";
+export { isEmployeeSelfServiceUser } from "./employee-self-service";
+export {
+  AUDIT_ACTION_LABELS,
+  AUDIT_ENTITY_LABELS,
+  extractAuditBusinessCode,
+  formatAuditActionLabel,
+  formatAuditDetailSummary,
+  formatAuditEntityLabel,
+  isUuidLike,
+  type AuditActionLabel,
+  type AuditLocale,
+} from "./audit-labels";
 export { inclusiveCalendarDays } from "./leave-days";
+
 export {
   scoreSearchFields,
   looksLikeRecordCode,

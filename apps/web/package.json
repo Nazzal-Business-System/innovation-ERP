@@ -8,7 +8,7 @@
     "start": "next start --port 3010",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
-    "test:entity-workspace": "node --experimental-strip-types --test src/lib/entity-workspace/__tests__/date.test.ts src/lib/entity-workspace/__tests__/entity-workspace.test.ts src/lib/entity-workspace/__tests__/opportunity-edit.test.ts src/lib/entity-workspace/__tests__/transaction-workspace.test.ts src/lib/entity-workspace/__tests__/edit-dialog.test.ts src/lib/entity-workspace/__tests__/mutation-persistence.test.ts src/lib/__tests__/nav-active.test.ts src/lib/__tests__/self-attendance-table-mapping.test.ts src/lib/__tests__/sidebar-pins.test.ts src/lib/__tests__/sidebar-pin-reorder.test.ts src/lib/__tests__/payroll-money.test.ts src/lib/hr/__tests__/employee-profile.test.ts"
+    "test:entity-workspace": "node --experimental-strip-types --test src/lib/entity-workspace/__tests__/date.test.ts src/lib/entity-workspace/__tests__/entity-workspace.test.ts src/lib/entity-workspace/__tests__/opportunity-edit.test.ts src/lib/entity-workspace/__tests__/transaction-workspace.test.ts src/lib/entity-workspace/__tests__/edit-dialog.test.ts src/lib/entity-workspace/__tests__/mutation-persistence.test.ts src/lib/__tests__/nav-active.test.ts src/lib/__tests__/my-workspace-nav.test.ts src/lib/__tests__/self-attendance-table-mapping.test.ts src/lib/__tests__/sidebar-pins.test.ts src/lib/__tests__/sidebar-pin-reorder.test.ts src/lib/__tests__/payroll-money.test.ts src/lib/hr/__tests__/employee-profile.test.ts"
   },
   "dependencies": {
     "@ierp/shared": "*",

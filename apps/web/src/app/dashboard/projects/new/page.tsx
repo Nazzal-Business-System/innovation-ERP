@@ -32,7 +32,7 @@ export default function NewProjectPage() {
   const { startNavigation } = useNavigation();
   const { t } = useI18n();
   const { data: customersData } = useSalesCustomers({ active: true });
-  const { data: usersData } = useSettingsUsers();
+  const { data: usersData } = useSettingsUsers({ page: 1, pageSize: 100 });
   const createProjectMutation = useCreateProject();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

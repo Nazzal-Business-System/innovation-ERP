@@ -73,7 +73,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const canWrite = has(PROJECTS_PERMISSIONS.WRITE);
   const { data: task, loading, error, refetch } = useProjectTask(id);
   const updateTaskMutation = useUpdateTask();
-  const { data: usersData } = useSettingsUsers();
+  const { data: usersData } = useSettingsUsers({ page: 1, pageSize: 100 });
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<ProjectTaskPriority>("MEDIUM");

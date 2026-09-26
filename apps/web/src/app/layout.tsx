@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { cookies } from "next/headers";
 import { GeistSans } from "geist/font/sans";
 import { APP_NAME } from "@ierp/shared";
@@ -40,6 +41,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className="bg-[var(--background)] font-sans antialiased">
         <Providers initialLocale={locale}>{children}</Providers>
+        <Analytics />
       </body>
     </html>
   );

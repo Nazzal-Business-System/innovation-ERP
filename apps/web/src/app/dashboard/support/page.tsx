@@ -25,13 +25,16 @@ import { SupportNavLinks } from "@/components/support/support-gate";
 import { ticketColumns } from "@/components/support/support-columns";
 import { SupportPageSkeleton } from "@/components/support/support-page-skeleton";
 import { useSupportOverview } from "@/lib/hooks/use-support";
+import { usePermissions } from "@/lib/hooks/use-permissions";
 import { useI18n } from "@/lib/i18n";
 import { useNavigation } from "@/lib/navigation-context";
-import type { SupportTicket } from "@ierp/shared";
+import { SUPPORT_PERMISSIONS, type SupportTicket } from "@ierp/shared";
 import { Plus } from "lucide-react";
 
 export default function SupportOverviewPage() {
   const { t } = useI18n();
+  const { has } = usePermissions();
+  const canWrite = has(SUPPORT_PERMISSIONS.WRITE);
   const router = useRouter();
   const { startNavigation } = useNavigation();
   const { data: overview, loading, error, refetch } = useSupportOverview();
@@ -67,7 +70,7 @@ export default function SupportOverviewPage() {
           title={t("support.title")}
           description={t("support.description")}
           badge={<Badge variant="outline">{t("common.liveData")}</Badge>}
-          actions={
+          actions={canWrite ? (
             <Button asChild className="cursor-pointer gap-2">
               <Link
                 href="/dashboard/support/tickets/new"
@@ -77,7 +80,7 @@ export default function SupportOverviewPage() {
                 {t("support.newTicket")}
               </Link>
             </Button>
-          }
+          ) : undefined}
         />
       </FadeIn>
 

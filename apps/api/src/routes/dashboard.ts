@@ -1,5 +1,7 @@
 import { Router } from "express";
+import { EXECUTIVE_PERMISSIONS } from "@ierp/shared";
 import { authenticate, requireJwtConfigured, type AuthenticatedRequest } from "../middleware/auth.js";
+import { requirePermission } from "../middleware/require-permission.js";
 import { asyncHandler } from "../middleware/error-handler.js";
 import { getExecutiveDashboard } from "../lib/executive-dashboard.js";
 import { collectMetricDiagnostics } from "../lib/metric-diagnostics.js";
@@ -9,6 +11,7 @@ const router = Router();
 
 router.use(requireJwtConfigured);
 router.use(authenticate);
+router.use(requirePermission(EXECUTIVE_PERMISSIONS.READ));
 
 router.get(
   "/executive",

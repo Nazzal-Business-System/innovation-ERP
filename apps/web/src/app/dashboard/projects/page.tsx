@@ -25,13 +25,16 @@ import { ProjectsNavLinks } from "@/components/projects/projects-gate";
 import { milestoneColumns, projectColumns } from "@/components/projects/projects-columns";
 import { ProjectsPageSkeleton } from "@/components/projects/projects-page-skeleton";
 import { useProjectsOverview } from "@/lib/hooks/use-projects";
+import { usePermissions } from "@/lib/hooks/use-permissions";
 import { useI18n } from "@/lib/i18n";
 import { useNavigation } from "@/lib/navigation-context";
-import type { Project, ProjectMilestone } from "@ierp/shared";
+import { PROJECTS_PERMISSIONS, type Project, type ProjectMilestone } from "@ierp/shared";
 import { Plus } from "lucide-react";
 
 export default function ProjectsOverviewPage() {
   const { t } = useI18n();
+  const { has } = usePermissions();
+  const canWrite = has(PROJECTS_PERMISSIONS.WRITE);
   const router = useRouter();
   const { startNavigation } = useNavigation();
   const { data: overview, loading, error, refetch } = useProjectsOverview();
@@ -72,7 +75,7 @@ export default function ProjectsOverviewPage() {
           title={t("projects.title")}
           description={t("projects.description")}
           badge={<Badge variant="outline">{t("common.liveData")}</Badge>}
-          actions={
+          actions={canWrite ? (
             <Button asChild className="cursor-pointer gap-2">
               <Link
                 href="/dashboard/projects/new"
@@ -82,7 +85,7 @@ export default function ProjectsOverviewPage() {
                 {t("projects.newProject")}
               </Link>
             </Button>
-          }
+          ) : undefined}
         />
       </FadeIn>
 

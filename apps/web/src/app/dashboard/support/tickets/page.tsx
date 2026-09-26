@@ -27,16 +27,19 @@ import {
 import { SupportTableSkeleton } from "@/components/support/support-page-skeleton";
 import { useSupportCategories, useSupportTickets } from "@/lib/hooks/use-support";
 import { useServerPagination } from "@/lib/hooks/use-server-pagination";
+import { usePermissions } from "@/lib/hooks/use-permissions";
 import { useNavigation } from "@/lib/navigation-context";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import type { SupportTicket } from "@ierp/shared";
+import { SUPPORT_PERMISSIONS, type SupportTicket } from "@ierp/shared";
 
 
 export default function TicketsPage() {
   const router = useRouter();
   const { startNavigation } = useNavigation();
   const { t, locale } = useI18n();
+  const { has } = usePermissions();
+  const canWrite = has(SUPPORT_PERMISSIONS.WRITE);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState("");
@@ -112,7 +115,7 @@ export default function TicketsPage() {
               </Badge>
             ) : undefined
           }
-          actions={
+          actions={canWrite ? (
             <Button asChild className="cursor-pointer gap-2">
               <Link
                 href="/dashboard/support/tickets/new"
@@ -122,7 +125,7 @@ export default function TicketsPage() {
                 {t("support.newTicket")}
               </Link>
             </Button>
-          }
+          ) : undefined}
         />
       </FadeIn>
 

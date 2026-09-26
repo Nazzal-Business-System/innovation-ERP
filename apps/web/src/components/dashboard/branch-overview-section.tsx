@@ -25,29 +25,34 @@ export function BranchOverviewSection({ branches }: BranchOverviewSectionProps) 
               <div
                 key={branch.id}
                 className={cn(
-                  "rounded-xl border border-[var(--border-subtle)] bg-[var(--muted-bg)]/30 p-5",
+                  "relative grid h-full grid-rows-[3.5rem_auto_auto] rounded-xl border border-[var(--border-subtle)] bg-[var(--muted-bg)]/30 p-5",
                   index === 0 && "ring-1 ring-[var(--accent)]/20"
                 )}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-lg font-semibold text-[var(--foreground)]">{branch.name}</p>
-                    <p className="mt-0.5 text-xs text-[var(--muted-foreground)]">
-                      {branch.revenueShare}% of total revenue
-                    </p>
-                  </div>
+                <div className="min-w-0 pe-20">
+                  <p
+                    className="line-clamp-2 text-lg font-semibold leading-6 text-[var(--foreground)]"
+                    title={branch.name}
+                  >
+                    {branch.name}
+                  </p>
                   {index === 0 && (
-                    <span className="rounded-md border border-[var(--accent)]/30 bg-[var(--accent-muted)] px-2 py-0.5 text-[10px] font-medium text-[var(--accent)]">
+                    <span className="absolute end-5 top-5 rounded-md border border-[var(--accent)]/30 bg-[var(--accent-muted)] px-2 py-0.5 text-[10px] font-medium text-[var(--accent)]">
                       Top branch
                     </span>
                   )}
                 </div>
 
-                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--muted-bg)]">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-[var(--gradient-from)] to-[var(--gradient-to)]"
-                    style={{ width: `${branch.revenueShare}%` }}
-                  />
+                <div>
+                  <p className="text-xs text-[var(--muted-foreground)]">
+                    {branch.revenueShare}% of total revenue
+                  </p>
+                  <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--muted-bg)]">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[var(--gradient-from)] to-[var(--gradient-to)]"
+                      style={{ width: `${branch.revenueShare}%` }}
+                    />
+                  </div>
                 </div>
 
                 <div className="mt-5 grid grid-cols-3 gap-3">

@@ -22,9 +22,10 @@ import { ProcurementPageSkeleton } from "@/components/procurement/procurement-pa
 import { purchaseOrderColumns } from "@/components/procurement/procurement-columns";
 import { useProcurementPurchaseOrders } from "@/lib/hooks/use-procurement";
 import { useServerPagination } from "@/lib/hooks/use-server-pagination";
+import { usePermissions } from "@/lib/hooks/use-permissions";
 import { useNavigation } from "@/lib/navigation-context";
 import { useI18n } from "@/lib/i18n";
-import type { ProcurementPurchaseOrder } from "@ierp/shared";
+import { PROCUREMENT_PERMISSIONS, type ProcurementPurchaseOrder } from "@ierp/shared";
 import { cn } from "@/lib/utils";
 
 const PO_STATUSES: Array<{ value: string; label: string }> = [
@@ -42,6 +43,8 @@ export default function PurchaseOrdersPage() {
   const router = useRouter();
   const { startNavigation } = useNavigation();
   const { t } = useI18n();
+  const { has } = usePermissions();
+  const canWrite = has(PROCUREMENT_PERMISSIONS.WRITE);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState("");
@@ -98,14 +101,14 @@ export default function PurchaseOrdersPage() {
               <Badge variant="secondary">{data.pagination.total} orders</Badge>
             ) : undefined
           }
-          actions={
+          actions={canWrite ? (
             <Button asChild className="cursor-pointer gap-2">
               <Link href="/dashboard/procurement/purchase-orders/new">
                 <Plus className="h-4 w-4" aria-hidden />
                 {t("form.newPurchaseOrder")}
               </Link>
             </Button>
-          }
+          ) : undefined}
         />
       </FadeIn>
 

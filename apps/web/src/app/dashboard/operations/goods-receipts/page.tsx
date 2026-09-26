@@ -22,9 +22,10 @@ import { OperationsTableSkeleton } from "@/components/operations/operations-page
 import { goodsReceiptColumns } from "@/components/operations/operations-columns";
 import { useGoodsReceipts } from "@/lib/hooks/use-operations";
 import { useServerPagination } from "@/lib/hooks/use-server-pagination";
+import { usePermissions } from "@/lib/hooks/use-permissions";
 import { useNavigation } from "@/lib/navigation-context";
 import { useI18n } from "@/lib/i18n";
-import type { OperationsGoodsReceipt } from "@ierp/shared";
+import { OPERATIONS_PERMISSIONS, PROCUREMENT_PERMISSIONS, type OperationsGoodsReceipt } from "@ierp/shared";
 import { cn } from "@/lib/utils";
 
 const GR_STATUSES = [
@@ -39,6 +40,8 @@ export default function GoodsReceiptsPage() {
   const router = useRouter();
   const { startNavigation } = useNavigation();
   const { t } = useI18n();
+  const { has } = usePermissions();
+  const canWrite = has(OPERATIONS_PERMISSIONS.WRITE, PROCUREMENT_PERMISSIONS.WRITE);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState("");
@@ -95,14 +98,14 @@ export default function GoodsReceiptsPage() {
               <Badge variant="secondary">{data.pagination.total} receipts</Badge>
             ) : undefined
           }
-          actions={
+          actions={canWrite ? (
             <Button asChild className="cursor-pointer gap-2" data-testid="new-goods-receipt-btn">
               <Link href="/dashboard/operations/goods-receipts/new">
                 <Plus className="h-4 w-4" aria-hidden />
                 {t("wizard.newGoodsReceipt")}
               </Link>
             </Button>
-          }
+          ) : undefined}
         />
       </FadeIn>
 

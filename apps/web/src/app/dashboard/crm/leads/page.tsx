@@ -22,9 +22,10 @@ import { CrmTableSkeleton } from "@/components/crm/crm-page-skeleton";
 import { leadColumns, LEAD_SOURCE_LABELS } from "@/components/crm/crm-columns";
 import { useCrmLeads } from "@/lib/hooks/use-crm";
 import { useServerPagination } from "@/lib/hooks/use-server-pagination";
+import { usePermissions } from "@/lib/hooks/use-permissions";
 import { useNavigation } from "@/lib/navigation-context";
 import { useI18n } from "@/lib/i18n";
-import type { CrmLead } from "@ierp/shared";
+import { CRM_PERMISSIONS, type CrmLead } from "@ierp/shared";
 
 const STATUS_OPTIONS = [
   { value: "", label: "All statuses" },
@@ -45,6 +46,8 @@ export default function LeadsPage() {
   const router = useRouter();
   const { startNavigation } = useNavigation();
   const { t } = useI18n();
+  const { has } = usePermissions();
+  const canWrite = has(CRM_PERMISSIONS.WRITE);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState("");
@@ -89,14 +92,14 @@ export default function LeadsPage() {
           title={t("crm.leadsTitle")}
           description={t("crm.leadsDesc")}
           badge={data ? <Badge variant="secondary">{data.pagination.total} leads</Badge> : undefined}
-          actions={
+          actions={canWrite ? (
             <Button asChild className="cursor-pointer gap-2">
               <Link href="/dashboard/crm/leads/new">
                 <Plus className="h-4 w-4" aria-hidden />
                 {t("crm.newLead")}
               </Link>
             </Button>
-          }
+          ) : undefined}
         />
       </FadeIn>
 

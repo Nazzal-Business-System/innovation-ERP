@@ -26,16 +26,19 @@ import {
 import { DocumentsTableSkeleton } from "@/components/documents/documents-page-skeleton";
 import { useDocumentCategories, useDocumentFiles } from "@/lib/hooks/use-documents";
 import { useServerPagination } from "@/lib/hooks/use-server-pagination";
+import { usePermissions } from "@/lib/hooks/use-permissions";
 import { useNavigation } from "@/lib/navigation-context";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import type { DocumentFile } from "@ierp/shared";
+import { DOCUMENTS_PERMISSIONS, type DocumentFile } from "@ierp/shared";
 
 
 export default function DocumentFilesPage() {
   const router = useRouter();
   const { startNavigation } = useNavigation();
   const { t, locale } = useI18n();
+  const { has } = usePermissions();
+  const canWrite = has(DOCUMENTS_PERMISSIONS.WRITE);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState("");
@@ -103,7 +106,7 @@ export default function DocumentFilesPage() {
               {data?.pagination.total ?? 0} {t("documents.filesTitle").toLowerCase()}
             </Badge>
           }
-          actions={
+          actions={canWrite ? (
             <Button asChild className="cursor-pointer gap-2">
               <Link
                 href="/dashboard/documents/files/new"
@@ -113,7 +116,7 @@ export default function DocumentFilesPage() {
                 {t("documents.newDocument")}
               </Link>
             </Button>
-          }
+          ) : undefined}
         />
       </FadeIn>
 

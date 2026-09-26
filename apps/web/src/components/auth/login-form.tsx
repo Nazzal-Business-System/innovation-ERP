@@ -260,6 +260,7 @@ export function LoginForm() {
                           autoComplete="current-password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
+                          placeholder="••••••••"
                           required
                           disabled={isLoading}
                           aria-invalid={Boolean(error) || undefined}

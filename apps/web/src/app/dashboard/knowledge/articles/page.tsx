@@ -26,15 +26,18 @@ import {
 import { KnowledgeTableSkeleton } from "@/components/knowledge/knowledge-page-skeleton";
 import { useKnowledgeArticles, useKnowledgeCategories } from "@/lib/hooks/use-knowledge";
 import { useServerPagination } from "@/lib/hooks/use-server-pagination";
+import { usePermissions } from "@/lib/hooks/use-permissions";
 import { useNavigation } from "@/lib/navigation-context";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import type { KnowledgeArticle } from "@ierp/shared";
+import { KNOWLEDGE_PERMISSIONS, type KnowledgeArticle } from "@ierp/shared";
 
 export default function KnowledgeArticlesPage() {
   const router = useRouter();
   const { startNavigation } = useNavigation();
   const { t, locale } = useI18n();
+  const { has } = usePermissions();
+  const canWrite = has(KNOWLEDGE_PERMISSIONS.WRITE);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState("");
@@ -104,7 +107,7 @@ export default function KnowledgeArticlesPage() {
               {data?.total ?? 0} {t("knowledge.articlesCountLabel", "articles")}
             </Badge>
           }
-          actions={
+          actions={canWrite ? (
             <Button asChild className="cursor-pointer gap-2">
               <Link
                 href="/dashboard/knowledge/articles/new"
@@ -114,7 +117,7 @@ export default function KnowledgeArticlesPage() {
                 {t("knowledge.newArticle")}
               </Link>
             </Button>
-          }
+          ) : undefined}
         />
       </FadeIn>
       <FadeIn delay={0.04}>

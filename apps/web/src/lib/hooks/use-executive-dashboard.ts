@@ -5,10 +5,10 @@ import { apiFetch } from "@/lib/api-client";
 import { useAsyncData, STALE } from "@/lib/hooks/use-async-data";
 import { queryKeys } from "@/lib/query/client";
 
-export function useExecutiveDashboard() {
+export function useExecutiveDashboard(enabled = true) {
   return useAsyncData(
     queryKeys.executiveDashboard,
     () => apiFetch<ExecutiveDashboardResponse>("/dashboard/executive"),
-    { staleTime: STALE.dashboard }
+    { staleTime: STALE.dashboard, enabled }
   );
 }

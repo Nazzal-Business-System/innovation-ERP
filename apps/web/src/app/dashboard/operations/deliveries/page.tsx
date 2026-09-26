@@ -22,9 +22,10 @@ import { OperationsTableSkeleton } from "@/components/operations/operations-page
 import { deliveryColumns } from "@/components/operations/operations-columns";
 import { useDeliveries } from "@/lib/hooks/use-operations";
 import { useServerPagination } from "@/lib/hooks/use-server-pagination";
+import { usePermissions } from "@/lib/hooks/use-permissions";
 import { useNavigation } from "@/lib/navigation-context";
 import { useI18n } from "@/lib/i18n";
-import type { OperationsDelivery } from "@ierp/shared";
+import { OPERATIONS_PERMISSIONS, SALES_PERMISSIONS, type OperationsDelivery } from "@ierp/shared";
 import { cn } from "@/lib/utils";
 
 const DL_STATUSES = [
@@ -40,6 +41,8 @@ export default function DeliveriesPage() {
   const router = useRouter();
   const { startNavigation } = useNavigation();
   const { t } = useI18n();
+  const { has } = usePermissions();
+  const canWrite = has(OPERATIONS_PERMISSIONS.WRITE, SALES_PERMISSIONS.WRITE);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState("");
@@ -96,14 +99,14 @@ export default function DeliveriesPage() {
               <Badge variant="secondary">{data.pagination.total} deliveries</Badge>
             ) : undefined
           }
-          actions={
+          actions={canWrite ? (
             <Button asChild className="cursor-pointer gap-2" data-testid="new-delivery-btn">
               <Link href="/dashboard/operations/deliveries/new">
                 <Plus className="h-4 w-4" aria-hidden />
                 {t("wizard.newDelivery")}
               </Link>
             </Button>
-          }
+          ) : undefined}
         />
       </FadeIn>
 

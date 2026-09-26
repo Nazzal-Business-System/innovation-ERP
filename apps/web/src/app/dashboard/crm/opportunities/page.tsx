@@ -23,9 +23,10 @@ import { CrmTableSkeleton } from "@/components/crm/crm-page-skeleton";
 import { opportunityColumns } from "@/components/crm/crm-columns";
 import { useCrmOpportunities } from "@/lib/hooks/use-crm";
 import { useServerPagination } from "@/lib/hooks/use-server-pagination";
+import { usePermissions } from "@/lib/hooks/use-permissions";
 import { useNavigation } from "@/lib/navigation-context";
 import { useI18n } from "@/lib/i18n";
-import type { CrmOpportunity, OpportunityStage } from "@ierp/shared";
+import { CRM_PERMISSIONS, type CrmOpportunity, type OpportunityStage } from "@ierp/shared";
 
 const TABLE_PAGE_SIZE = 10;
 
@@ -51,6 +52,8 @@ export default function OpportunitiesPage() {
   const router = useRouter();
   const { startNavigation } = useNavigation();
   const { t } = useI18n();
+  const { has } = usePermissions();
+  const canWrite = has(CRM_PERMISSIONS.WRITE);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [stage, setStage] = useState("");
@@ -124,14 +127,14 @@ export default function OpportunitiesPage() {
               <Badge variant="secondary">{data.pagination.total} opportunities</Badge>
             ) : undefined
           }
-          actions={
+          actions={canWrite ? (
             <Button asChild className="cursor-pointer gap-2">
               <Link href="/dashboard/crm/opportunities/new">
                 <Plus className="h-4 w-4" aria-hidden />
                 {t("crm.newOpportunity")}
               </Link>
             </Button>
-          }
+          ) : undefined}
         />
       </FadeIn>
 

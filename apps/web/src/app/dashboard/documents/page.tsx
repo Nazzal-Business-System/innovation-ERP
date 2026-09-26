@@ -18,12 +18,15 @@ import { DocumentsNavLinks } from "@/components/documents/documents-gate";
 import { fileColumns, DOCUMENT_MODULE_LABELS } from "@/components/documents/documents-columns";
 import { DocumentsPageSkeleton } from "@/components/documents/documents-page-skeleton";
 import { useDocumentsOverview } from "@/lib/hooks/use-documents";
+import { usePermissions } from "@/lib/hooks/use-permissions";
 import { useI18n } from "@/lib/i18n";
 import { useNavigation } from "@/lib/navigation-context";
-import type { DocumentFile } from "@ierp/shared";
+import { DOCUMENTS_PERMISSIONS, type DocumentFile } from "@ierp/shared";
 
 export default function DocumentsOverviewPage() {
   const { t } = useI18n();
+  const { has } = usePermissions();
+  const canWrite = has(DOCUMENTS_PERMISSIONS.WRITE);
   const router = useRouter();
   const { startNavigation } = useNavigation();
   const { data: overview, loading, error, refetch } = useDocumentsOverview();
@@ -58,7 +61,7 @@ export default function DocumentsOverviewPage() {
           title={t("documents.title")}
           description={t("documents.description")}
           badge={<Badge variant="outline">{t("common.liveData")}</Badge>}
-          actions={
+          actions={canWrite ? (
             <Button asChild className="cursor-pointer gap-2">
               <Link
                 href="/dashboard/documents/files/new"
@@ -68,7 +71,7 @@ export default function DocumentsOverviewPage() {
                 {t("documents.newDocument")}
               </Link>
             </Button>
-          }
+          ) : undefined}
         />
       </FadeIn>
 

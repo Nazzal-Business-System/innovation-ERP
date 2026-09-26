@@ -22,9 +22,10 @@ import { CrmTableSkeleton } from "@/components/crm/crm-page-skeleton";
 import { activityColumns, ACTIVITY_TYPE_LABELS } from "@/components/crm/crm-columns";
 import { useCompleteActivity, useCrmActivities } from "@/lib/hooks/use-crm";
 import { useServerPagination } from "@/lib/hooks/use-server-pagination";
+import { usePermissions } from "@/lib/hooks/use-permissions";
 import { useNavigation } from "@/lib/navigation-context";
 import { useI18n } from "@/lib/i18n";
-import type { CrmActivity } from "@ierp/shared";
+import { CRM_PERMISSIONS, type CrmActivity } from "@ierp/shared";
 
 const TYPE_OPTIONS = [{ value: "", label: "All types" }, ...Object.entries(ACTIVITY_TYPE_LABELS).map(([value, label]) => ({ value, label }))];
 const STATUS_OPTIONS = [
@@ -39,6 +40,8 @@ export default function ActivitiesPage() {
   const router = useRouter();
   const { startNavigation } = useNavigation();
   const { t } = useI18n();
+  const { has } = usePermissions();
+  const canWrite = has(CRM_PERMISSIONS.WRITE);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [type, setType] = useState("");
@@ -82,7 +85,7 @@ export default function ActivitiesPage() {
       id: "actions",
       header: "Actions",
       cell: ({ row }: { row: { original: CrmActivity } }) =>
-        !row.original.isCompleted ? (
+        canWrite && !row.original.isCompleted ? (
           <Button
             size="sm"
             variant="secondary"
@@ -115,14 +118,14 @@ export default function ActivitiesPage() {
           title={t("crm.activitiesTitle")}
           description={t("crm.activitiesDesc")}
           badge={data ? <Badge variant="secondary">{data.pagination.total} activities</Badge> : undefined}
-          actions={
+          actions={canWrite ? (
             <Button asChild className="cursor-pointer gap-2">
               <Link href="/dashboard/crm/activities/new">
                 <Plus className="h-4 w-4" aria-hidden />
                 {t("crm.newActivity")}
               </Link>
             </Button>
-          }
+          ) : undefined}
         />
       </FadeIn>
 

@@ -22,9 +22,10 @@ import { InventoryPageSkeleton } from "@/components/inventory/inventory-page-ske
 import { transferColumns } from "@/components/inventory/inventory-columns";
 import { useInventoryTransfers } from "@/lib/hooks/use-inventory";
 import { useServerPagination } from "@/lib/hooks/use-server-pagination";
+import { usePermissions } from "@/lib/hooks/use-permissions";
 import { useNavigation } from "@/lib/navigation-context";
 import { useI18n } from "@/lib/i18n";
-import type { InventoryTransfer } from "@ierp/shared";
+import { INVENTORY_PERMISSIONS, type InventoryTransfer } from "@ierp/shared";
 
 const STATUS_OPTIONS = [
   { value: "", label: "All statuses" },
@@ -39,6 +40,8 @@ export default function TransfersPage() {
   const router = useRouter();
   const { startNavigation } = useNavigation();
   const { t } = useI18n();
+  const { has } = usePermissions();
+  const canWrite = has(INVENTORY_PERMISSIONS.WRITE);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState("");
@@ -87,14 +90,14 @@ export default function TransfersPage() {
           title={t("inventory.transfersTitle")}
           description={t("inventory.transfersDesc")}
           badge={<Badge variant="outline">{t("common.liveData")}</Badge>}
-          actions={
+          actions={canWrite ? (
             <Button asChild className="cursor-pointer gap-2">
               <Link href="/dashboard/inventory/transfers/new">
                 <Plus className="h-4 w-4" aria-hidden />
                 {t("inventory.newTransfer")}
               </Link>
             </Button>
-          }
+          ) : undefined}
         />
       </FadeIn>
 

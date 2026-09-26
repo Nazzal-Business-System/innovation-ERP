@@ -17,12 +17,15 @@ import { KnowledgeNavLinks } from "@/components/knowledge/knowledge-gate";
 import { articleColumns } from "@/components/knowledge/knowledge-columns";
 import { KnowledgePageSkeleton } from "@/components/knowledge/knowledge-page-skeleton";
 import { useKnowledgeOverview } from "@/lib/hooks/use-knowledge";
+import { usePermissions } from "@/lib/hooks/use-permissions";
 import { useI18n } from "@/lib/i18n";
 import { useNavigation } from "@/lib/navigation-context";
-import type { KnowledgeArticle } from "@ierp/shared";
+import { KNOWLEDGE_PERMISSIONS, type KnowledgeArticle } from "@ierp/shared";
 
 export default function KnowledgeOverviewPage() {
   const { t } = useI18n();
+  const { has } = usePermissions();
+  const canWrite = has(KNOWLEDGE_PERMISSIONS.WRITE);
   const router = useRouter();
   const { startNavigation } = useNavigation();
   const { data: overview, loading, error, refetch } = useKnowledgeOverview();
@@ -56,7 +59,7 @@ export default function KnowledgeOverviewPage() {
           title={t("knowledge.title")}
           description={t("knowledge.description")}
           badge={<Badge variant="outline">{t("common.liveData")}</Badge>}
-          actions={
+          actions={canWrite ? (
             <Button asChild className="cursor-pointer gap-2">
               <Link
                 href="/dashboard/knowledge/articles/new"
@@ -66,7 +69,7 @@ export default function KnowledgeOverviewPage() {
                 {t("knowledge.newArticle")}
               </Link>
             </Button>
-          }
+          ) : undefined}
         />
       </FadeIn>
 
